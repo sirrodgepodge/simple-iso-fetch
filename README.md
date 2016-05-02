@@ -13,7 +13,7 @@ import simpleFetch from 'simple-iso-fetch';
 
 // absolute routes are needed server-side until Node.js implements native fetch,
 // you can set the base URL for server-side via the method below or with 'process.env.BASE_URL'
-simpleFetch.setHostUrl('http://google.com');
+simpleFetch.setHost('http://google.com');
 
 // example usage for get request to 'http://google.com'
 simpleFetch.get({
@@ -29,7 +29,7 @@ simpleFetch.get('/').then(res => {
 });
 
 // set to your app's hostname
-simpleFetch.setHostUrl('http://localhost:3000');
+simpleFetch.setHost('http://localhost:3000');
 
 
 // normal usage
