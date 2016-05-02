@@ -186,5 +186,5 @@ simpleFetch.boundToResponse: [], // array of functions to be called upon all res
 
   [MIT](LICENSE)
 
-[nodei-image]: https://nodei.co/npm/webpack.png?downloads=true&downloadRank=true&stars=true
-[nodei-url]: https://www.npmjs.com/package/webpack
+[nodei-image]: https://nodei.co/npm/simple-iso-fetch.png?downloads=true&downloadRank=true&stars=true
+[nodei-url]: https://www.npmjs.com/package/simple-iso-fetch
