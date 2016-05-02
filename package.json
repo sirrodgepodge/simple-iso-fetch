@@ -1,0 +1,24 @@
+{
+  "name": "simple-iso-fetch",
+  "version": "1.0.0",
+  "description": "Isomorphic fetch with parsing taken care of for you (based on headers) and response binding built in",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sirrodgepodge/simple-iso-fetch.git"
+  },
+  "author": "sirRodgePodge",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sirrodgepodge/simple-iso-fetch/issues"
+  },
+  "homepage": "https://github.com/sirrodgepodge/simple-iso-fetch#readme",
+  "dependencies": {
+    "iso-path-join": "^1.0.2",
+    "isomorphic-fetch": "^2.2.1",
+    "lodash": "^4.11.1"
+  }
+}
