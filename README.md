@@ -97,16 +97,17 @@ const location = 'place';
 // the below will make a POST request to:
 // 'http://localhost:3000/api/posts/1234/place/?anAnalyticsThing={"aDeeplyNestedProperty":"example"}&anotherProperty=example2'
 simpleFetch.makeRequest({
-  // can also just use simpleFetch.<lowercase method> instead of simpleFetch.makeRequest for
-  // for GET, PUT, and POST, DELETE uses the simpleFetch 'del' method as 'delete' is a reserved word.
-  // The makeRequest method allows you to specify the method and therefore allows for less common methods
+  // instead of 'makeRequest method + 'method' property you just use simpleFetch.<lowercase method> instead of 
+  // simpleFetch.makeRequest for GET, PUT, and POST, DELETE uses the simpleFetch 'del' method as 'delete'
+  // is a reserved word.  The makeRequest method allows you to specify the method and therefore allows
+  // for less common methods.
   method: 'post',
   route: '/api/posts',
   params: [id, location],
   query: {
       anAnalyticsThing: {
         // must be using bodyParser middleware with urlencoded method's extended property set to true
-        // for nested objects in query string to work (it's the default but many set this to false):
+        // for nested objects in 'query' to work (it's the default but many examples set this to false):
         // 'bodyParser.urlencoded();' or 'bodyParser.urlencoded({ extended: true});'
         aDeeplyNestedProperty: 'example'
       },
