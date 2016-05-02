@@ -9,7 +9,6 @@ I have also added the ability to bind functions to be run when API responses are
 
 ## Making Requests
 ```js
-
 import simpleFetch from 'simple-iso-fetch';
 
 // absolute routes are needed server-side until Node.js implements native fetch,
@@ -131,8 +130,56 @@ simpleFetch.makeRequest({
 })
 .then(res => console.log(res)) // console.logs whatever the response is
 .catch(err => console.log(err)); // console.logs whatever the error is
+```
+
+## Binding/Unbinding Functions to Responses
+```js
+import simpleFetch from 'simple-iso-fetch';
+
+// set host to your app's hostname for server-side fetching
+simpleFetch.setHostUrl('http://localhost:3000');
 
 
+// bind function to error response, returns function to stop binding this function (useful for React's ComponentWillUnmount)
+const unbindThisErrorFunction = simpleFetch.bindToError(res => {
+  console.log('There was an error!');
+});
+
+// unbinds the function that was bound above, so it will no longer get run upon error responses
+const wasBound = unbindThisErrorFunction();
+
+// the unbinding function returns 'true' if the function it tried to unbind was actually bound when it was called and 'false' if it was not
+console.log(wasBound);
+
+
+// bind function to success response, returns function to unbind this function (useful for React's ComponentWillUnmount)
+const unbindThisSuccessFunction = simpleFetch.bindToSuccess(res => {
+  console.log('There was a successful response from a fetch!');
+});
+
+// unbinds the function that was bound above, so it will no longer get run upon success responses
+const wasBound = unbindThisErrorFunction();
+
+// the unbinding function returns 'true' if the function it tried to unbind was actually bound when it was called and 'false' if it was not
+console.log(wasBound);
+
+
+// bind function to all responses (success and error), returns function to unbind this function (useful for React's ComponentWillUnmount)
+const unbindThisResponseFunction = simpleFetch.bindToResponse(res => {
+  console.log('There was an error or successful response from a fetch!');
+})
+
+// unbinds the function that was bound above, so it will no longer get run upon responses
+const wasBound = unbindThisErrorFunction();
+
+// the unbinding function returns 'true' if the function it tried to unbind was actually bound when it was called and 'false' if it was not
+console.log(wasBound);
+
+
+// you can reference the arrays of bound functions with the below properties, note that if you modify these arrays directly and affect order or overwrite functions, your unbind functions will no longer work
+simpleFetch.boundToError: [], // array of functions to be called upon error
+simpleFetch.boundToSuccess: [], // array of functions to be called upon success responses
+simpleFetch.boundToResponse: [], // array of functions to be called upon all responses
 ```
 
 ## License
