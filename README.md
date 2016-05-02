@@ -40,7 +40,8 @@ const aJsonObject = {
 
 const exampleParam = 'paramparamparam';
 
-// the below will make a POST request to: ''http://localhost:3000/api/paramparamparam?prop=valvalval&prop2=anotherVal'
+// the below will make a POST request to:
+// 'http://localhost:3000/api/paramparamparam?prop=valvalval&prop2=anotherVal'
 simpleFetch.post({
   route: '/api',
   params: exampleParam,
@@ -53,7 +54,8 @@ simpleFetch.post({
 .then(res => console.log(res)) // console.logs whatever the response is
 .catch(err => console.log(err)); // console.logs whatever the error is
 
-// the below will make a PUT request to: ''http://localhost:3000/api/paramparamparam?prop=valvalval&prop2=anotherVal'
+// the below will make a PUT request to:
+// 'http://localhost:3000/api/paramparamparam?prop=valvalval&prop2=anotherVal'
 simpleFetch.put({
   route: '/api',
   params: exampleParam,
@@ -66,7 +68,9 @@ simpleFetch.put({
 .then(res => console.log(res)) // console.logs whatever the response is
 .catch(err => console.log(err)); // console.logs whatever the error is
 
-// the below will make a DELETE request to: ''http://localhost:3000/api/paramparamparam?prop=valvalval&prop2=anotherVal' (note that DELETE and GET requests can't have a 'body' property per W3C spec)
+// the below will make a DELETE request to:
+// 'http://localhost:3000/api/paramparamparam?prop=valvalval&prop2=anotherVal'
+// (note that DELETE and GET requests can't have a 'body' property per W3C spec)
 simpleFetch.del({
   route: '/api',
   params: exampleParam,
@@ -90,24 +94,38 @@ const blogPost = {
 const id = '1234';
 const location = 'place';
 
-// the below will make a POST request to: 'http://localhost:3000/api/posts/1234/place/?anAnalyticsThing={"aDeeplyNestedProperty":"example"}&anotherProperty=example2'
+// the below will make a POST request to:
+// 'http://localhost:3000/api/posts/1234/place/?anAnalyticsThing={"aDeeplyNestedProperty":"example"}&anotherProperty=example2'
 simpleFetch.makeRequest({
-  method: 'post',  // can also just use simpleFetch.post instead of simpleFetch.makeRequest for POST request for convenience (true for GET, PUT, and POST, DELETE uses 'del' method)
+  // can also just use simpleFetch.<lowercase method> instead of simpleFetch.makeRequest for
+  // for GET, PUT, and POST, DELETE uses the simpleFetch 'del' method as 'delete' is a reserved word.
+  // The makeRequest method allows you to specify the method and therefore allows for less common methods
+  method: 'post',
   route: '/api/posts',
   params: [id, location],
   query: {
       anAnalyticsThing: {
-        aDeeplyNestedProperty: 'example' // must be using bodyParser middleware with urlencoded method's extended property set to true for nested objects in query string to work (it's the default but many set this to false): bodyParser.urlencoded({ extended: true});
+        // must be using bodyParser middleware with urlencoded method's extended property set to true
+        // for nested objects in query string to work (it's the default but many set this to false):
+        // 'bodyParser.urlencoded();' or 'bodyParser.urlencoded({ extended: true});'
+        aDeeplyNestedProperty: 'example'
       },
       anotherProperty: 'example2'
   },
   body: blogPost,
   headers: {
-    aHeadersProperty: 'value' // note you should not set 'Content-Type' unless you really think you have to, this is being inferred for you by simple-iso-fetch
+    // note you should not set the 'Content-Type' header yourself unless you really think you have to
+    // as this is being inferred for you by simple-iso-fetch
+    aHeadersProperty: 'value' 
   },
-  // when this property is set to true, credentials will be included in the request no matter where the request is being made to, if this is set to false only 'same-origin' requests will include credentials which means they'll never be included in requests coming from server, 'credentials' must be included for authentication
+  // when 'includeCreds' property is set to true, credentials will be included in the request no matter
+  // where the request is being made to, if this is set to false only 'same-origin' (internal to app) requests
+  // will include credentials which means they'll never be included in requests coming from server until Node.js
+  // implements native Fetch API. 'credentials' must be included for authentication
   includeCreds: true,
-  // FOR ALL RESPONSE TYPES OTHER THAN ARRAYBUFFER YOU DON'T NEED TO USE 'responseType' PROPERTY AS TYPE WILL BE INFERRED.  For an 'arrayBuffer' response this is needed however, as there's no way (that I've found) to infer that a response is an arrayBuffer vs. a blob
+  // FOR ALL RESPONSE TYPES OTHER THAN ARRAYBUFFER YOU DON'T NEED TO USE 'responseType' PROPERTY AS TYPE WILL BE INFERRED.  
+  // For an 'arrayBuffer' response this is needed however, as there's no way (that I've found)
+  // to infer that a response is an arrayBuffer vs. a blob
   responseType: 'arrayBuffer'
 })
 .then(res => console.log(res)) // console.logs whatever the response is
