@@ -1,15 +1,22 @@
 'use strict';
 
-var fetch = require('isomorphic-fetch');
-var _ = require('lodash');
-var pathJoin = require('iso-path-join');
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
+// for checking if in server or client environment
 function onServer() {
 	return !(typeof window !== 'undefined' && window.document);
 }
 
 // boolean true if on server false if on client
 var isServer = onServer();
+
+if (isServer) {
+	var FormData = require('form-data');
+}
+
+var fetch = require('isomorphic-fetch');
+var _ = require('lodash');
+var pathJoin = require('iso-path-join');
 
 // needed as absolute routes are needed server-side until Node.js implements native fetch
 var baseURL = !isServer ? '' : process.env.BASE_URL || 'http://localhost:' + (process.env.PORT || 3000);
@@ -35,9 +42,9 @@ function listenFactory(arrName) {
 }
 
 module.exports = {
-	setHostUrl: function setHostUrl(hostUrl) {
+	setHost: function setHost(hostUrl, port) {
 		// allows for setting base url server-side without environmental variable
-		baseURL = !isServer ? '' : hostUrl || 'http://localhost:' + (process.env.PORT || 3000);
+		baseURL = !isServer ? '' : hostUrl || 'http://localhost:' + (port || process.env.PORT || 3000);
 	},
 	makeRequest: function makeRequest(o) {
 		var _this = this;
@@ -46,19 +53,27 @@ module.exports = {
 		if (!o.route) return console.error("no 'route' property specified on request");
 
 		// make relative routes absolute, isomorphism needs this until Node.js implements native fetch
-		if (o.route.slice(0, 1) === '/') o.route = '' + baseURL + o.route;
+		if (isServer && o.route.slice(0, 1) === '/') o.route = '' + baseURL + o.route;
+
+		// add forward slash to the end of route if it is not already there
+		if (o.route.slice(-1) !== '/') o.route = o.route + '/';
 
 		// provide default values
 		o.params = o.params || [];
 		o.headers = _.merge({
 			Accept: '*/*',
 			'Accept-Encoding': 'gzip, deflate, sdch',
-			'Content-Type': !o.body || typeof o.body === 'string' ? 'text/plain' : o.body instanceof Blob ? o.body.type : o.body instanceof FormData ? 'multipart/form-data' : 'application/json'
+			'Content-Type': !o.body || typeof o.body === 'string' ? 'text/plain' : o.body instanceof (isServer ? Buffer : Blob) ? o.body.type : o.body instanceof FormData ? 'multipart/form-data' : 'application/json'
 		}, o.headers || {});
+
+		// convert Node.js Buffers to ArrayBuffers which can be sent in requests
+		if (isServer && o.body instanceof Buffer) {
+			o.body = o.body.buffer.slice(o.body.byteOffset, o.body.byteOffset + o.body.byteLength);
+		}
 
 		// transform query object into query string format, JSON-ifying contained objects
 		o.query = !o.query ? '' : '?' + Object.keys(o.query).map(function (val) {
-			return val + '=' + (o.query[val] && typeof o.query[val] === 'object' ? JSON.stringify(o.query[val]) : o.query[val]);
+			return val + '=' + (o.query[val] && _typeof(o.query[val]) === 'object' ? JSON.stringify(o.query[val]) : o.query[val]);
 		}).join('&');
 
 		var fullUrl = '' + o.route + pathJoin(o.params, '/') + o.query;
@@ -139,9 +154,9 @@ module.exports = {
 		return this.makeRequest(o);
 	},
 
-	boundToError: [], // arrays of functions to be called upon error
-	boundToSuccess: [], // arrays of functions to be called upon success responses
-	boundToResponse: [], // will be arrays of functions to be called upon all responses
+	boundToError: [], // array of functions to be called upon error
+	boundToSuccess: [], // array of functions to be called upon success responses
+	boundToResponse: [], // array of functions to be called upon all responses
 	bindToError: listenFactory('boundToError'), // generates function for pushing to 'boundToError'
 	bindToSuccess: listenFactory('boundToSuccess'), // generates function for pushing to 'boundToSuccess'
 	bindToResponse: listenFactory('boundToResponse') // generates function for pushing to 'boundToResponse'
