@@ -1,11 +1,9 @@
 # simple-iso-fetch
-Isomorphic fetch with response parsing taken care of for you (based on headers) and response binding built in
-
-[![NPM][nodei-image]][nodei-url]
-
 The new Fetch API is way better than XHR to work with for sure, but theres still a decent way to go to make it dead simple, I've attempted to bridge that gap with this library :).
 
 I have also added the ability to bind functions to be run when API responses are received.  Functions can be bound to error responses, to success responses, and to all responses (both success and error).  See methods for this below 'Making Requests' section.
+
+[![NPM][nodei-image]][nodei-url]
 
 ## Making Requests
 ```js
