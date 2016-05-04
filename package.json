@@ -1,8 +1,14 @@
 {
   "name": "simple-iso-fetch",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Isomorphic fetch with response parsing taken care of for you (based on headers) and response binding built in",
   "main": "index.js",
+  "keywords": [
+		"isomorphic",
+		"universal",
+    "fetch",
+    "simple"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
