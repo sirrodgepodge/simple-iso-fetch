@@ -67,7 +67,7 @@ module.exports = function () {
 		key: 'setHost',
 		value: function setHost(hostUrl, port) {
 			// allows for setting base url server-side without environmental variable
-			baseURL = '' + hostUrl + (port && ':' + port || '') || 'http://localhost:' + (port || process.env.PORT || 3000);
+			baseURL = hostUrl && '' + hostUrl + (port && ':' + port || '') || 'http://localhost:' + (port || process.env.PORT || 3000);
 			return baseURL;
 		}
 	}, {

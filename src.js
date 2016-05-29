@@ -21,11 +21,12 @@ const unListenFactory = (arr, func, index) => () => {
 
   // look through whole array for function, keep track of whether or not it is found
   let found = false;
-  arr.forEach((val, i) => {
+  arr.filter((val, i) => {
     if (val === func) {
-      arr.splice(i, 1);
       found = true;
+      return false; // remove from bound functions
     }
+    return true;
   });
 
   if (!found && process.NODE_ENV !== 'production') {
@@ -49,7 +50,7 @@ const methods = ['get', 'put', 'post', 'del'];
 
 module.exports = class SimpleIsoFetch {
   static setHost(hostUrl, port) { // allows for setting base url server-side without environmental variable
-    baseURL = `${hostUrl}${port && `:${port}` || ''}` || (`http://localhost:${port || process.env.PORT || 3000}`);
+    baseURL = hostUrl && `${hostUrl}${port && `:${port}` || ''}` || (`http://localhost:${port || process.env.PORT || 3000}`);
     return baseURL;
   }
 
@@ -98,7 +99,7 @@ module.exports = class SimpleIsoFetch {
 			case '@@simpleIsoFetch/UNBIND_FUNC':
 				state[action.bindArr] = state[action.bindArr].filter(func =>
 					func !== action.unbindFunc &&
-					func.toString() !== action.unbindFunc.toString() &&
+					(func.toString() !== action.unbindFunc.toString() || ~func.toString().indexOf('native code')) &&
 					func.name.replace('bound ', '') !== action.unbindFunc.name);
 				return state;
 
