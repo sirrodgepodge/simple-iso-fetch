@@ -6,29 +6,32 @@ I have also added the ability to bind functions to be run when API responses are
 [![NPM][nodei-image]][nodei-url]
 
 # Making Requests
+To make requests you just need to need to make an instance of SimpleIsoFetch and then can use your standard 'get', 'put', 'post', 'del', and 'patch' methods.  If you're server-side you need to set the host because node-fetch can't determine the base route
+## 'Hello World' Example
 ```js
 import SimpleIsoFetch from 'simple-iso-fetch';
 
 // absolute routes are needed server-side until Node.js implements native fetch,
 // you can set the base URL for server-side via the method below or with 'process.env.BASE_URL'
-SimpleIsoFetch.setHost('http://google.com');
+SimpleIsoFetch.setHost('http://locahost', 3000);
 
 simpleIsoFetch = new SimpleIsoFetch(); // SimpleIsoFetch must be instantiated before use, this allows for cookie session handling in universal apps, discussed late
 
-// example usage for get request to 'http://google.com'
+// example usage for get request to 'http://locahost:3000'
 simpleIsoFetch.get({
   route: '/'
 })
 .then(res => {
-  console.log(res); // => all html returned from http://google.com 
+  console.log(res); // => all html returned from 'http://locahost:3000'
 });
 
-// identical to the above, convenience default for when string is passed to method function
+// identical to the above, convenience default for when no body/customization is needed (just uses string passed as route)
 simpleIsoFetch.get('/').then(res => {
-  console.log(res); // => all html returned from http://google.com 
+  console.log(res); // => all html returned from 'http://locahost:3000'
 });
-
-
+```
+## A More Thorough Example
+```js
 // set to your app's hostname + port, (if hostname not provided, defaults to localhost, if hostname provided without port, 80 is assumed, if neither hostname nor port provided, http://localhost: + (process.env.PORT || 3000) used, function returns resulting base URL (note this is a static method, on class itself not instance)
 SimpleIsoFetch.setHost('http://localhost', 3000);
 
