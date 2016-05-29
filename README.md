@@ -188,6 +188,9 @@ simpleFetch.boundToResponse: [], // array of functions to be called upon all res
 Not far into making this library I had to solve the problem of being able to pass an instance of "SimpleIsoFetch" throughout my redux application in order to put persist the authentication cookie for server side requests in a universal app.
 
 I provided a solution for this with using redux middleware and also provided a way to put the functions you have bound to API responses on your redux state and modify them with actions.
+
+Note that if you are not using redux or not making a universal app that has authentication, you can still use everything above this point and have a nifty fetching tool, but if you do need to handle the isomorphic redux thing, you're covered below :).
+
 ```js
 // on your root universal route
 app.get('/*', (req, res, next) => {
