@@ -56,10 +56,10 @@ simpleIsoFetch.post({
 .then(res => console.log(res)) // console.logs whatever the response is
 .catch(err => console.log(err)); // console.logs whatever the error is
 
+// there is flexibility built in to allow you to provide the route as the first argument and additional options as the second
 // the below will make a PUT request to:
 // 'http://localhost:3000/api/paramparamparam?prop=valvalval&prop2=anotherVal'
-simpleIsoFetch.put({
-  route: '/api',
+simpleIsoFetch.put('/api', {
   params: exampleParam,
   query: {
     prop: 'valvalval',

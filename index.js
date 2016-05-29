@@ -213,9 +213,8 @@ module.exports = function () {
 		// add methods for request methods
 		methods.forEach(function (method) {
 			return (// eslint-disable-line no-return-assign
-				_this[method] = function (o) {
-					var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-					return _this.makeRequest(typeof o === 'string' ? _extends({}, reqObjAsSecondArg, { method: method, route: o }) : _extends({}, o, { method: method }));
+				_this[method] = function (o, reqObjAsSecondArg) {
+					return _this.makeRequest(_extends({}, o, { method: method }), reqObjAsSecondArg);
 				}
 			);
 		}); // if string is passed just use that as route
@@ -233,8 +232,13 @@ module.exports = function () {
 		key: 'makeRequest',
 		// generates function for pushing to 'boundToResponse'
 
-		value: function makeRequest(o, reqObjAsSecondArg) {
+		value: function makeRequest(o) {
 			var _this2 = this;
+
+			var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+			// allow for first argument to be a route string and for options to be passed in as object in second argument
+			o = _extends({}, reqObjAsSecondArg, typeof o === 'string' ? { route: o } : o);
 
 			// error if no route is provided
 			if (!o.route) return console.error("no 'route' property specified on request");

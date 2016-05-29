@@ -166,8 +166,8 @@ module.exports = class SimpleIsoFetch {
 
     // add methods for request methods
     methods.forEach(method => // eslint-disable-line no-return-assign
-      this[method] = (o, reqObjAsSecondArg = {}) =>
-        this.makeRequest(typeof o === 'string' ? {...reqObjAsSecondArg, method, route: o} : {...o, method})); // if string is passed just use that as route
+      this[method] = (o, reqObjAsSecondArg) =>
+        this.makeRequest({...o, method}, reqObjAsSecondArg)); // if string is passed just use that as route
 	}
 
   // bound functions arrays
@@ -182,7 +182,10 @@ module.exports = class SimpleIsoFetch {
   bindToSuccess = listenFactory('boundToSuccess') // generates function for pushing to 'boundToSuccess'
   bindToResponse = listenFactory('boundToResponse') // generates function for pushing to 'boundToResponse'
 
-	makeRequest(o, reqObjAsSecondArg) {
+	makeRequest(o, reqObjAsSecondArg = {}) {
+		// allow for first argument to be a route string and for options to be passed in as object in second argument
+		o = {...reqObjAsSecondArg, ...(typeof o === 'string' ? {route: o} : o)};
+
 		// error if no route is provided
 		if (!o.route) return console.error("no 'route' property specified on request");
 
