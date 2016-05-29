@@ -28,9 +28,9 @@ simpleIsoFetch.get('/').then(res => {
   console.log(res); // => all html returned from http://google.com 
 });
 
+
 // set to your app's hostname + port, (if hostname not provided, defaults to localhost, if hostname provided without port, 80 is assumed, if neither hostname nor port provided, http://localhost: + (process.env.PORT || 3000) used, function returns resulting base URL (note this is a static method, on class itself not instance)
 SimpleIsoFetch.setHost('http://localhost', 3000);
-
 
 // normal usage
 const aJsonObject = {
