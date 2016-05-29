@@ -200,6 +200,7 @@ app.get('/*', (req, res, next) => {
 }); 
 ```
 ### Use with redux-thunk
+Since redux-thunk is very common for handling async requests with redux I have included middleware for this pattern, you can of course feel free to make your ownand just pass your 'simpleIsoFetchInstance' into that.
 ```js
 // in 'configureStore' file/function
 import thunk from 'redux-thunk';
@@ -207,7 +208,7 @@ import { simpleIsoFetchThunk } from 'simple-iso-fetch';
 import rootReducer from '../reducers';
 
 export function configureStore(..., simpleIsoFetchInstance, ...) {
-  const finalCreateStore = applyMiddleware(simpleIsoFetchThunk(simpleFetch), thunk, ...)(createStore);
+  const finalCreateStore = applyMiddleware(simpleIsoFetchThunk(simpleIsoFetchInstance), thunk, ...)(createStore);
   const store = finalCreateStore(rootReducer, initialState);
   return store
 }
