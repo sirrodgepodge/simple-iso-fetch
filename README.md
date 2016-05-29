@@ -241,7 +241,7 @@ export function logIn(body) {
 ## Adding API response function bindings to Redux state
 In order to still have functions bound to API responses on our instance and have those carried through our isomorphic app we need to place the arrays of bound functions ('boundToError', 'boundToSuccess', and 'boundToResponse') on our redux state and make them modifiable with actions, here's how we do it
 
-### Attaching to Redux root Reducer
+### Attach SimpleIsoFetch to Redux root Reducer
 ```js
 /// in root reducer file
 import { bindingsReducer } from simpleIsoFetch;
