@@ -4,8 +4,8 @@
   "description": "Isomorphic fetch with response parsing taken care of for you (based on headers) and response binding built in",
   "main": "index.js",
   "keywords": [
-		"isomorphic",
-		"universal",
+    "isomorphic",
+    "universal",
     "fetch",
     "simple"
   ],
@@ -26,6 +26,7 @@
     "form-data": "^1.0.0-rc4",
     "iso-path-join": "^1.0.2",
     "isomorphic-fetch": "^2.2.1",
-    "lodash": "^4.11.1"
+    "lodash": "^4.13.1",
+    "querystring": "^0.2.0"
   }
 }
