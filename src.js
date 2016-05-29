@@ -45,14 +45,18 @@ function listenFactory(arrName) {
 }
 
 // request methods which shortcuts will be made for
-const methods = ['get', 'put', 'post', 'del'];
+const methods = ['get', 'put', 'post', 'del', 'patch'];
 
 
 module.exports = class SimpleIsoFetch {
-  static setHost(hostUrl, port) { // allows for setting base url server-side without environmental variable
+  static setBaseUrl(hostUrl, port) { // allows for setting base url server-side without environmental variable
     baseURL = hostUrl && `${hostUrl}${port && `:${port}` || ''}` || (`http://localhost:${port || process.env.PORT || 3000}`);
     return baseURL;
   }
+
+	static getBaseUrl() {
+		return baseURL;
+	}
 
 	static simpleIsoFetchThunk(simpleIsoFetchInstance) {
 		return store => next => action => // eslint-disable-line no-unused-vars
@@ -183,7 +187,7 @@ module.exports = class SimpleIsoFetch {
 		if (!o.route) return console.error("no 'route' property specified on request");
 
 		// make relative routes absolute, isomorphism needs this until Node.js implements native fetch
-		if (isServer && o.route[0] === '/') o.route = `${baseURL}${o.route}`;
+		if (o.route[0] === '/') o.route = `${baseURL}${o.route}`;
 
 		// provide default values
     o.params = o.params || [];

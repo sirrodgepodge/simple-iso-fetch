@@ -36,11 +36,12 @@ var unListenFactory = function unListenFactory(arr, func, index) {
 
 		// look through whole array for function, keep track of whether or not it is found
 		var found = false;
-		arr.forEach(function (val, i) {
+		arr.filter(function (val, i) {
 			if (val === func) {
-				arr.splice(i, 1);
 				found = true;
+				return false; // remove from bound functions
 			}
+			return true;
 		});
 
 		if (!found && process.NODE_ENV !== 'production') {
@@ -60,14 +61,19 @@ function listenFactory(arrName) {
 }
 
 // request methods which shortcuts will be made for
-var methods = ['get', 'put', 'post', 'del'];
+var methods = ['get', 'put', 'post', 'del', 'patch'];
 
 module.exports = function () {
 	_createClass(SimpleIsoFetch, null, [{
-		key: 'setHost',
-		value: function setHost(hostUrl, port) {
+		key: 'setBaseUrl',
+		value: function setBaseUrl(hostUrl, port) {
 			// allows for setting base url server-side without environmental variable
 			baseURL = hostUrl && '' + hostUrl + (port && ':' + port || '') || 'http://localhost:' + (port || process.env.PORT || 3000);
+			return baseURL;
+		}
+	}, {
+		key: 'getBaseUrl',
+		value: function getBaseUrl() {
 			return baseURL;
 		}
 	}, {
@@ -121,7 +127,7 @@ module.exports = function () {
 
 				case '@@simpleIsoFetch/UNBIND_FUNC':
 					state[action.bindArr] = state[action.bindArr].filter(function (func) {
-						return func !== action.unbindFunc && func.toString() !== action.unbindFunc.toString() && func.name.replace('bound ', '') !== action.unbindFunc.name;
+						return func !== action.unbindFunc && (func.toString() !== action.unbindFunc.toString() || ~func.toString().indexOf('native code')) && func.name.replace('bound ', '') !== action.unbindFunc.name;
 					});
 					return state;
 
@@ -231,7 +237,7 @@ module.exports = function () {
 			if (!o.route) return console.error("no 'route' property specified on request");
 
 			// make relative routes absolute, isomorphism needs this until Node.js implements native fetch
-			if (isServer && o.route[0] === '/') o.route = '' + baseURL + o.route;
+			if (o.route[0] === '/') o.route = '' + baseURL + o.route;
 
 			// provide default values
 			o.params = o.params || [];

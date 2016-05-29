@@ -13,7 +13,7 @@ import SimpleIsoFetch from 'simple-iso-fetch';
 
 // absolute routes are needed server-side until Node.js implements native fetch,
 // you can set the base URL for server-side via the method below or with 'process.env.BASE_URL'
-SimpleIsoFetch.setHost('http://locahost', 3000);
+SimpleIsoFetch.setBaseUrl('http://locahost', 3000);
 
 simpleIsoFetch = new SimpleIsoFetch(); // SimpleIsoFetch must be instantiated before use, this allows for cookie session handling in universal apps, discussed late
 
@@ -33,7 +33,7 @@ simpleIsoFetch.get('/').then(res => {
 ## A More Thorough Example
 ```js
 // set to your app's hostname + port, (if hostname not provided, defaults to localhost, if hostname provided without port, 80 is assumed, if neither hostname nor port provided, http://localhost: + (process.env.PORT || 3000) used, function returns resulting base URL (note this is a static method, on class itself not instance)
-SimpleIsoFetch.setHost('http://localhost', 3000);
+SimpleIsoFetch.setBaseUrl('http://localhost', 3000);
 
 // normal usage
 const aJsonObject = {
@@ -99,7 +99,7 @@ const location = 'place';
 // the below will make a POST request to:
 // 'http://localhost:3000/api/posts/1234/place/?anAnalyticsThing={"aDeeplyNestedProperty":"example"}&anotherProperty=example2'
 simpleIsoFetch.makeRequest({
-  // instead of 'makeRequest method + 'method' property you just use simpleFetch.<lowercase method> instead of 
+  // instead of 'makeRequest method + 'method' property you just use simpleFetch.<lowercase method> instead of
   // simpleFetch.makeRequest for GET, PUT, and POST, DELETE uses the simpleFetch 'del' method as 'delete'
   // is a reserved word.  The makeRequest method allows you to specify the method and therefore allows
   // for less common methods.
@@ -119,7 +119,7 @@ simpleIsoFetch.makeRequest({
   headers: {
     // note you should not set the 'Content-Type' header yourself unless you really think you have to
     // as this is being inferred for you by simple-iso-fetch
-    aHeadersProperty: 'value' 
+    aHeadersProperty: 'value'
   },
   // when 'includeCreds' property is set to true, credentials will be included in the request no matter
   // where the request is being made to, if this is set to false only 'same-origin' (internal to app) requests
@@ -140,7 +140,7 @@ simpleIsoFetch.makeRequest({
 import SimpleIsoFetch from 'simple-iso-fetch';
 
 // set host to your app's hostname for server-side fetching
-SimpleIsoFetch.setHostUrl('http://localhost:3000');
+SimpleIsoFetch.setBaseUrl('http://localhost:3000');
 
 // make instance
 const simpleIsoFetch = new SimpleIsoFetch();
@@ -200,7 +200,7 @@ app.get('/*', (req, res, next) => {
     const simpleIsoFetch = new SimpleIsoFetch(req);
     const store = configureStore(..., simpleIsoFetch, ...);
     ...
-}); 
+});
 ```
 ### Use with redux-thunk
 Since redux-thunk is very common for handling async requests with redux I have included middleware for this pattern, you can of course feel free to make your ownand just pass your 'simpleIsoFetchInstance' into that.
@@ -299,7 +299,7 @@ export default class App extends Component {
         {closeButton: true}
       ));
     }
-  
+
     // transform response
     this.props.dispatch(bindToErrorAction(this.errorToastFunc));
   }
