@@ -1,5 +1,7 @@
 'use strict';
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); // external libraries
 
 
@@ -212,7 +214,8 @@ module.exports = function () {
 		methods.forEach(function (method) {
 			return (// eslint-disable-line no-return-assign
 				_this[method] = function (o) {
-					return _this.makeRequest(_lodash2.default.merge(typeof o === 'string' ? { route: o } : o, { method: method }));
+					var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+					return _this.makeRequest(typeof o === 'string' ? _extends({}, reqObjAsSecondArg, { method: method, route: o }) : _extends({}, o, { method: method }));
 				}
 			);
 		}); // if string is passed just use that as route
@@ -230,7 +233,7 @@ module.exports = function () {
 		key: 'makeRequest',
 		// generates function for pushing to 'boundToResponse'
 
-		value: function makeRequest(o) {
+		value: function makeRequest(o, reqObjAsSecondArg) {
 			var _this2 = this;
 
 			// error if no route is provided
@@ -241,6 +244,11 @@ module.exports = function () {
 
 			// provide default values
 			o.params = o.params || [];
+			if (~['get', 'delete'].indexOf(o.method) && o.body) {
+				console.error('request body can not be sent on get or delete requests, body has been set to null');
+				o = _extends({}, o, { body: null });
+			}
+
 			o.headers = _lodash2.default.merge({
 				Accept: '*/*',
 				'Accept-Encoding': 'gzip, deflate, sdch',
@@ -270,12 +278,8 @@ module.exports = function () {
 
 			// add given body property to requestConfig if not a GET or DELETE request
 			if (o.body) {
-				if (~['get', 'delete'].indexOf(o.method)) {
-					console.error('request body can not be sent on get or delete requests');
-				} else {
-					requestConfig.body = o.headers['Content-Type'] === 'application/json' && typeof o.body !== 'string' ? JSON.stringify(o.body) : // fetch expects stringified body jsons, not objects
-					o.body;
-				}
+				requestConfig.body = o.headers['Content-Type'] === 'application/json' && typeof o.body !== 'string' ? JSON.stringify(o.body) : // fetch expects stringified body jsons, not objects
+				o.body;
 			}
 
 			// actual api call occurs here

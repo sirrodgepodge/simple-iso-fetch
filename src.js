@@ -166,8 +166,8 @@ module.exports = class SimpleIsoFetch {
 
     // add methods for request methods
     methods.forEach(method => // eslint-disable-line no-return-assign
-      this[method] = o =>
-        this.makeRequest(_.merge(typeof o === 'string' ? {route: o} : o, {method}))); // if string is passed just use that as route
+      this[method] = (o, reqObjAsSecondArg = {}) =>
+        this.makeRequest(typeof o === 'string' ? {...reqObjAsSecondArg, method, route: o} : {...o, method})); // if string is passed just use that as route
 	}
 
   // bound functions arrays
@@ -182,7 +182,7 @@ module.exports = class SimpleIsoFetch {
   bindToSuccess = listenFactory('boundToSuccess') // generates function for pushing to 'boundToSuccess'
   bindToResponse = listenFactory('boundToResponse') // generates function for pushing to 'boundToResponse'
 
-	makeRequest(o) {
+	makeRequest(o, reqObjAsSecondArg) {
 		// error if no route is provided
 		if (!o.route) return console.error("no 'route' property specified on request");
 
@@ -191,6 +191,11 @@ module.exports = class SimpleIsoFetch {
 
 		// provide default values
     o.params = o.params || [];
+		if (~['get', 'delete'].indexOf(o.method) && o.body) {
+			console.error('request body can not be sent on get or delete requests, body has been set to null');
+			o = {...o, body: null};
+		}
+
 		o.headers = _.merge({
       Accept: '*/*',
       'Accept-Encoding': 'gzip, deflate, sdch',
@@ -228,14 +233,9 @@ module.exports = class SimpleIsoFetch {
 
 		// add given body property to requestConfig if not a GET or DELETE request
 		if (o.body) {
-			if (~['get', 'delete'].indexOf(o.method)) {
-				console.error('request body can not be sent on get or delete requests');
-			}
-			else {
-				requestConfig.body = o.headers['Content-Type'] === 'application/json' && typeof o.body !== 'string' ?
-					JSON.stringify(o.body) : // fetch expects stringified body jsons, not objects
-					o.body;
-			}
+			requestConfig.body = o.headers['Content-Type'] === 'application/json' && typeof o.body !== 'string' ?
+				JSON.stringify(o.body) : // fetch expects stringified body jsons, not objects
+				o.body;
 		}
 
 		// actual api call occurs here
