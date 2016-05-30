@@ -268,7 +268,8 @@ const store = configureStore(..., simpleIsoFetch, ...);
 syncBindingsWithStore(simpleIsoFetch, store);
 ```
 ### Binding functions to API responses
-Here is an example of how to send a 'react-toastr' (http://tomchentw.github.io/react-toastr/) message upon error responses with a status code of 500 or greater
+Here is an example of how to send a 'react-toastr' (http://tomchentw.github.io/react-toastr/) message upon error responses with a status code of 500 or greater. <br>
+<i>(to actually get react-toastr fully working requires stylesheets as well, see a fully working example implemented <a href="https://github.com/sirrodgepodge/my-react-redux-universal-hot-example/blob/master/app/shared/App.js">here</a>, try logging in without creating a user.)</i>
 ```js
 // react-toastr library needs
 import {
@@ -317,8 +318,6 @@ export default class App extends Component {
         <ToastContainer
           toastMessageFactory={props =>
             <ToastMessageAnim {...props}
-              className='slide'
-              transition='slide'
               timeOut={6000}/>}
           ref='container'
           className='toast-top-right'/>
