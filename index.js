@@ -213,8 +213,9 @@ module.exports = function () {
 		// add methods for request methods
 		methods.forEach(function (method) {
 			return (// eslint-disable-line no-return-assign
-				_this[method] = function (o, reqObjAsSecondArg) {
-					return _this.makeRequest(_extends({}, o, { method: method }), reqObjAsSecondArg);
+				_this[method] = function (o) {
+					var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+					return _this.makeRequest(o, _extends({}, reqObjAsSecondArg, { method: method }));
 				}
 			);
 		}); // if string is passed just use that as route

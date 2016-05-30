@@ -166,8 +166,8 @@ module.exports = class SimpleIsoFetch {
 
     // add methods for request methods
     methods.forEach(method => // eslint-disable-line no-return-assign
-      this[method] = (o, reqObjAsSecondArg) =>
-        this.makeRequest({...o, method}, reqObjAsSecondArg)); // if string is passed just use that as route
+      this[method] = (o, reqObjAsSecondArg = {}) =>
+        this.makeRequest(o, {...reqObjAsSecondArg, method})); // if string is passed just use that as route
 	}
 
   // bound functions arrays
