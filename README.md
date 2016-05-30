@@ -1,4 +1,6 @@
-# simple-iso-fetch
+<p align='center'>
+  <img src='https://cloud.githubusercontent.com/assets/7177292/15636870/86fd651a-25da-11e6-8d3b-160c72081e3a.png' width='450'/>
+</p>
 The new Fetch API is way better than XHR to work with for sure, but theres still a decent way to go to make it dead simple, I've attempted to bridge that gap with this library :).
 
 I have also added the ability to bind functions to be run when API responses are received.  Functions can be bound to error responses, to success responses, and to all responses (both success and error).  See methods for this below 'Making Requests' section.
