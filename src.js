@@ -194,7 +194,7 @@ module.exports = class SimpleIsoFetch {
 
 		// provide default values
     o.params = o.params || [];
-		if (~['get', 'delete'].indexOf(o.method) && o.body) {
+		if (~['get', 'del'].indexOf(o.method) && o.body) {
 			console.error('request body can not be sent on get or delete requests, body has been set to null');
 			o = {...o, body: null};
 		}
@@ -223,7 +223,7 @@ module.exports = class SimpleIsoFetch {
 			`?${queryStringify(o.query)}`;
 
 		const fullUrl = `${o.route}${pathJoin(o.params, '/')}${o.query}`;
-		const res = {method: o.method.toUpperCase()}; // explicity add method to response, otherwise it's not included
+		const res = {method: o.method === 'del' ? 'DELETE' : o.method.toUpperCase()}; // explicity add method to response, otherwise it's not included
 		const requestConfig = {
 			credentials: !o.includeCreds ? 'include' : 'same-origin',
 			method: o.method,

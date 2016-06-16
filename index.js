@@ -2,9 +2,6 @@
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); // external libraries
-
-
 var _lodash = require('lodash');
 
 var _lodash2 = _interopRequireDefault(_lodash);
@@ -17,7 +14,8 @@ var _querystring = require('querystring');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } } // external libraries
+
 
 // server-side/polyfills
 var FormData = global.FormData || require('form-data');
@@ -66,132 +64,119 @@ function listenFactory(arrName) {
 var methods = ['get', 'put', 'post', 'del', 'patch'];
 
 module.exports = function () {
-	_createClass(SimpleIsoFetch, null, [{
-		key: 'setBaseUrl',
-		value: function setBaseUrl(hostUrl, port) {
-			// allows for setting base url server-side without environmental variable
-			baseURL = hostUrl && '' + hostUrl + (port && ':' + port || '') || 'http://localhost:' + (port || process.env.PORT || 3000);
-			return baseURL;
-		}
-	}, {
-		key: 'getBaseUrl',
-		value: function getBaseUrl() {
-			return baseURL;
-		}
-	}, {
-		key: 'simpleIsoFetchThunk',
-		value: function simpleIsoFetchThunk(simpleIsoFetchInstance) {
-			return function (store) {
-				return function (next) {
-					return function (action) {
-						return (// eslint-disable-line no-unused-vars
-							next(typeof action === 'function' ? action(simpleIsoFetchInstance) : action)
-						);
-					};
+	SimpleIsoFetch.setBaseUrl = function setBaseUrl(hostUrl, port) {
+		// allows for setting base url server-side without environmental variable
+		baseURL = hostUrl && '' + hostUrl + (port && ':' + port || '') || 'http://localhost:' + (port || process.env.PORT || 3000);
+		return baseURL;
+	};
+
+	SimpleIsoFetch.getBaseUrl = function getBaseUrl() {
+		return baseURL;
+	};
+
+	SimpleIsoFetch.simpleIsoFetchThunk = function simpleIsoFetchThunk(simpleIsoFetchInstance) {
+		return function (store) {
+			return function (next) {
+				return function (action) {
+					return (// eslint-disable-line no-unused-vars
+						next(typeof action === 'function' ? action(simpleIsoFetchInstance) : action)
+					);
 				};
 			};
-		}
-	}, {
-		key: 'syncBindingsWithStore',
-		value: function syncBindingsWithStore(simpleIsoFetchInstance, store) {
-			var _ref = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+		};
+	};
 
-			var _ref$stateProperty = _ref.stateProperty;
-			var stateProperty = _ref$stateProperty === undefined ? 'simpleIsoFetch' : _ref$stateProperty;
+	SimpleIsoFetch.syncBindingsWithStore = function syncBindingsWithStore(simpleIsoFetchInstance, store) {
+		var _ref = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
-			// Ensure that the reducer is mounted on the store and functioning properly.
-			if (!store.getState()[stateProperty]) {
-				throw new Error('Expected the simple-iso-fetch state to be available either as `state.simpleIsoFetch` ' + 'or as the custom expression you can specify as `stateProperty` ' + 'in the `syncBindingsWithStore()` options. ' + 'Ensure you have added the `bindingsReducer` to your store\'s ' + 'reducers via `combineReducers` or whatever method you use to isolate ' + 'your reducers.');
-			}
+		var _ref$stateProperty = _ref.stateProperty;
+		var stateProperty = _ref$stateProperty === undefined ? 'simpleIsoFetch' : _ref$stateProperty;
 
-			store.dispatch({
-				type: '@@simpleIsoFetch/INIT_BINDINGS',
-				bindings: simpleIsoFetchInstance.bindingsContainer
-			});
+		// Ensure that the reducer is mounted on the store and functioning properly.
+		if (!store.getState()[stateProperty]) {
+			throw new Error('Expected the simple-iso-fetch state to be available either as `state.simpleIsoFetch` ' + 'or as the custom expression you can specify as `stateProperty` ' + 'in the `syncBindingsWithStore()` options. ' + 'Ensure you have added the `bindingsReducer` to your store\'s ' + 'reducers via `combineReducers` or whatever method you use to isolate ' + 'your reducers.');
 		}
-	}, {
-		key: 'bindingsReducer',
-		value: function bindingsReducer() {
-			var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-			var action = arguments[1];
 
-			if (!Object.keys(state).length && ~action.type.indexOf('simpleIsoFetch') && ! ~action.type.indexOf('INIT_BINDINGS')) {
-				throw new Error('You need to run syncBindingsWithStore(<simpleIsoFetch instance>,<store>) ' + 'in order to initialize bindings ');
-			}
+		store.dispatch({
+			type: '@@simpleIsoFetch/INIT_BINDINGS',
+			bindings: simpleIsoFetchInstance.bindingsContainer
+		});
+	};
 
-			switch (action.type) {
-				case '@@simpleIsoFetch/INIT_BINDINGS':
-					return action.bindings;
+	SimpleIsoFetch.bindingsReducer = function bindingsReducer() {
+		var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+		var action = arguments[1];
 
-				case '@@simpleIsoFetch/BIND_FUNC':
-					state[action.bindArr] = state[action.bindArr].concat(action.bindFunc);
-					return state;
+		if (!Object.keys(state).length && ~action.type.indexOf('simpleIsoFetch') && ! ~action.type.indexOf('INIT_BINDINGS')) {
+			throw new Error('You need to run syncBindingsWithStore(<simpleIsoFetch instance>,<store>) ' + 'in order to initialize bindings ');
+		}
 
-				case '@@simpleIsoFetch/UNBIND_FUNC':
-					state[action.bindArr] = state[action.bindArr].filter(function (func) {
-						return func !== action.unbindFunc && (func.toString() !== action.unbindFunc.toString() || ~func.toString().indexOf('native code')) && func.name.replace('bound ', '') !== action.unbindFunc.name;
-					});
-					return state;
+		switch (action.type) {
+			case '@@simpleIsoFetch/INIT_BINDINGS':
+				return action.bindings;
 
-				default:
-					return state;
-			}
+			case '@@simpleIsoFetch/BIND_FUNC':
+				state[action.bindArr] = state[action.bindArr].concat(action.bindFunc);
+				return state;
+
+			case '@@simpleIsoFetch/UNBIND_FUNC':
+				state[action.bindArr] = state[action.bindArr].filter(function (func) {
+					return func !== action.unbindFunc && (func.toString() !== action.unbindFunc.toString() || ~func.toString().indexOf('native code')) && func.name.replace('bound ', '') !== action.unbindFunc.name;
+				});
+				return state;
+
+			default:
+				return state;
 		}
-	}, {
-		key: 'bindToErrorAction',
-		value: function bindToErrorAction(func) {
-			return {
-				type: '@@simpleIsoFetch/BIND_FUNC',
-				bindArr: 'boundToError',
-				bindFunc: func
-			};
-		}
-	}, {
-		key: 'bindToSuccessAction',
-		value: function bindToSuccessAction(func) {
-			return {
-				type: '@@simpleIsoFetch/BIND_FUNC',
-				bindArr: 'boundToSuccess',
-				bindFunc: func
-			};
-		}
-	}, {
-		key: 'bindToResponseAction',
-		value: function bindToResponseAction(func) {
-			return {
-				type: '@@simpleIsoFetch/BIND_FUNC',
-				bindArr: 'boundToResponse',
-				bindFunc: func
-			};
-		}
-	}, {
-		key: 'unbindFromErrorAction',
-		value: function unbindFromErrorAction(func) {
-			return {
-				type: '@@simpleIsoFetch/UNBIND_FUNC',
-				bindArr: 'boundToError',
-				unbindFunc: func
-			};
-		}
-	}, {
-		key: 'unbindFromSuccessAction',
-		value: function unbindFromSuccessAction(func) {
-			return {
-				type: '@@simpleIsoFetch/UNBIND_FUNC',
-				bindArr: 'boundToSuccess',
-				unbindFunc: func
-			};
-		}
-	}, {
-		key: 'unbindFromResponseAction',
-		value: function unbindFromResponseAction(func) {
-			return {
-				type: '@@simpleIsoFetch/UNBIND_FUNC',
-				bindArr: 'boundToResponse',
-				unbindFunc: func
-			};
-		}
-	}]);
+	};
+
+	SimpleIsoFetch.bindToErrorAction = function bindToErrorAction(func) {
+		return {
+			type: '@@simpleIsoFetch/BIND_FUNC',
+			bindArr: 'boundToError',
+			bindFunc: func
+		};
+	};
+
+	SimpleIsoFetch.bindToSuccessAction = function bindToSuccessAction(func) {
+		return {
+			type: '@@simpleIsoFetch/BIND_FUNC',
+			bindArr: 'boundToSuccess',
+			bindFunc: func
+		};
+	};
+
+	SimpleIsoFetch.bindToResponseAction = function bindToResponseAction(func) {
+		return {
+			type: '@@simpleIsoFetch/BIND_FUNC',
+			bindArr: 'boundToResponse',
+			bindFunc: func
+		};
+	};
+
+	SimpleIsoFetch.unbindFromErrorAction = function unbindFromErrorAction(func) {
+		return {
+			type: '@@simpleIsoFetch/UNBIND_FUNC',
+			bindArr: 'boundToError',
+			unbindFunc: func
+		};
+	};
+
+	SimpleIsoFetch.unbindFromSuccessAction = function unbindFromSuccessAction(func) {
+		return {
+			type: '@@simpleIsoFetch/UNBIND_FUNC',
+			bindArr: 'boundToSuccess',
+			unbindFunc: func
+		};
+	};
+
+	SimpleIsoFetch.unbindFromResponseAction = function unbindFromResponseAction(func) {
+		return {
+			type: '@@simpleIsoFetch/UNBIND_FUNC',
+			bindArr: 'boundToResponse',
+			unbindFunc: func
+		};
+	};
 
 	function SimpleIsoFetch(req) {
 		var _this = this;
@@ -229,101 +214,98 @@ module.exports = function () {
 	// generates function for pushing to 'boundToSuccess'
 
 
-	_createClass(SimpleIsoFetch, [{
-		key: 'makeRequest',
-		// generates function for pushing to 'boundToResponse'
+	// generates function for pushing to 'boundToResponse'
 
-		value: function makeRequest(o) {
-			var _this2 = this;
+	SimpleIsoFetch.prototype.makeRequest = function makeRequest(o) {
+		var _this2 = this;
 
-			var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+		var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-			// allow for first argument to be a route string and for options to be passed in as object in second argument
-			o = _extends({}, reqObjAsSecondArg, typeof o === 'string' ? { route: o } : o);
+		// allow for first argument to be a route string and for options to be passed in as object in second argument
+		o = _extends({}, reqObjAsSecondArg, typeof o === 'string' ? { route: o } : o);
 
-			// error if no route is provided
-			if (!o.route) return console.error("no 'route' property specified on request");
+		// error if no route is provided
+		if (!o.route) return console.error("no 'route' property specified on request");
 
-			// make relative routes absolute, isomorphism needs this until Node.js implements native fetch
-			if (o.route[0] === '/') o.route = '' + baseURL + o.route;
+		// make relative routes absolute, isomorphism needs this until Node.js implements native fetch
+		if (o.route[0] === '/') o.route = '' + baseURL + o.route;
 
-			// provide default values
-			o.params = o.params || [];
-			if (~['get', 'delete'].indexOf(o.method) && o.body) {
-				console.error('request body can not be sent on get or delete requests, body has been set to null');
-				o = _extends({}, o, { body: null });
-			}
-
-			o.headers = _lodash2.default.merge({
-				Accept: '*/*',
-				'Accept-Encoding': 'gzip, deflate, sdch',
-				'Content-Type': !o.body || typeof o.body === 'string' ? // intelligently determine content type
-				'text/plain' : o.body instanceof (isServer ? Buffer : Blob) ? o.body.type : o.body instanceof FormData ? 'multipart/form-data' : 'application/json'
-			}, this.cookiesObj || {}, o.headers || {});
-
-			// convert Node.js Buffers to ArrayBuffers which can be sent in requests
-			if (isServer && o.body instanceof Buffer) {
-				o.body = o.body.buffer.slice(o.body.byteOffset, o.body.byteOffset + o.body.byteLength);
-			}
-
-			// transform query object into query string format
-			o.query = !o.query ? '' : '?' + (0, _querystring.stringify)(o.query);
-
-			var fullUrl = '' + o.route + (0, _isoPathJoin2.default)(o.params, '/') + o.query;
-			var res = { method: o.method.toUpperCase() }; // explicity add method to response, otherwise it's not included
-			var requestConfig = {
-				credentials: !o.includeCreds ? 'include' : 'same-origin',
-				method: o.method,
-				headers: new Headers(o.headers), // 'Headers' is a new native global paired with 'fetch'
-
-				// enables cors requests for absolute paths not beginning with current site's href
-				// note that cookies can't be set with the response on cors requests
-				mode: o.route.slice[0] === '/' || baseURL && o.route.indexOf(baseURL) === 0 ? 'same-origin' : 'cors'
-			};
-
-			// add given body property to requestConfig if not a GET or DELETE request
-			if (o.body) {
-				requestConfig.body = o.headers['Content-Type'] === 'application/json' && typeof o.body !== 'string' ? JSON.stringify(o.body) : // fetch expects stringified body jsons, not objects
-				o.body;
-			}
-
-			// actual api call occurs here
-			return fetch(fullUrl, requestConfig).then(function (unparsedRes) {
-				var responseBodyContentType = unparsedRes.headers.get('Content-Type');
-
-				// first add props other than body to response, then determine how to parse response
-				return _lodash2.default.merge(res, _lodash2.default.omit(unparsedRes, 'body')), !responseBodyContentType || ~responseBodyContentType.indexOf('text') ? unparsedRes.text() : ~responseBodyContentType.indexOf('json') ? unparsedRes.json() : ~responseBodyContentType.indexOf('form') ? unparsedRes.formData() : o.responseType === 'arrayBuffer' ? // allow user to specify arraybuffer vs blob, don't think you can actually determine difference as it seems like different ways to view same data
-				unparsedRes.arrayBuffer : unparsedRes.blob();
-			}).then(function (body) {
-				return(
-					// update body with parsed body
-					_lodash2.default.merge(res, { body: body }) && !res.ok ? (_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToError).forEach(function (boundFunc) {
-						return boundFunc(res);
-					}), // run bound functions
-					Promise.reject(_lodash2.default.merge(res, { statusText: o.method.toUpperCase() + ' \n ' + fullUrl + ' \n ' + res.status + ' (' + res.statusText + ')' })) // resolve error
-					) : (_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToSuccess).forEach(function (boundFunc) {
-						return boundFunc(res);
-					}), // run bound functions
-					Promise.resolve(res))
-				);
-			}).catch(function (err) {
-				// default to fake normal response on request error so that response handlers can deal with it
-				if (!Object.keys(res).length) {
-					_lodash2.default.merge({
-						url: o.route,
-						status: 501,
-						statusText: o.method.toUpperCase() + ' \n ' + fullUrl + ' \n ' + res.status + ' (' + err.message + ')'
-					}, res);
-					_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToError).forEach(function (boundFunc) {
-						return boundFunc(res);
-					});
-				}
-
-				// send error to the '.catch' where the api library is being used
-				return Promise.reject(err);
-			});
+		// provide default values
+		o.params = o.params || [];
+		if (~['get', 'del'].indexOf(o.method) && o.body) {
+			console.error('request body can not be sent on get or delete requests, body has been set to null');
+			o = _extends({}, o, { body: null });
 		}
-	}]);
+
+		o.headers = _lodash2.default.merge({
+			Accept: '*/*',
+			'Accept-Encoding': 'gzip, deflate, sdch',
+			'Content-Type': !o.body || typeof o.body === 'string' ? // intelligently determine content type
+			'text/plain' : o.body instanceof (isServer ? Buffer : Blob) ? o.body.type : o.body instanceof FormData ? 'multipart/form-data' : 'application/json'
+		}, this.cookiesObj || {}, o.headers || {});
+
+		// convert Node.js Buffers to ArrayBuffers which can be sent in requests
+		if (isServer && o.body instanceof Buffer) {
+			o.body = o.body.buffer.slice(o.body.byteOffset, o.body.byteOffset + o.body.byteLength);
+		}
+
+		// transform query object into query string format
+		o.query = !o.query ? '' : '?' + (0, _querystring.stringify)(o.query);
+
+		var fullUrl = '' + o.route + (0, _isoPathJoin2.default)(o.params, '/') + o.query;
+		var res = { method: o.method === 'del' ? 'DELETE' : o.method.toUpperCase() }; // explicity add method to response, otherwise it's not included
+		var requestConfig = {
+			credentials: !o.includeCreds ? 'include' : 'same-origin',
+			method: o.method,
+			headers: new Headers(o.headers), // 'Headers' is a new native global paired with 'fetch'
+
+			// enables cors requests for absolute paths not beginning with current site's href
+			// note that cookies can't be set with the response on cors requests
+			mode: o.route.slice[0] === '/' || baseURL && o.route.indexOf(baseURL) === 0 ? 'same-origin' : 'cors'
+		};
+
+		// add given body property to requestConfig if not a GET or DELETE request
+		if (o.body) {
+			requestConfig.body = o.headers['Content-Type'] === 'application/json' && typeof o.body !== 'string' ? JSON.stringify(o.body) : // fetch expects stringified body jsons, not objects
+			o.body;
+		}
+
+		// actual api call occurs here
+		return fetch(fullUrl, requestConfig).then(function (unparsedRes) {
+			var responseBodyContentType = unparsedRes.headers.get('Content-Type');
+
+			// first add props other than body to response, then determine how to parse response
+			return _lodash2.default.merge(res, _lodash2.default.omit(unparsedRes, 'body')), !responseBodyContentType || ~responseBodyContentType.indexOf('text') ? unparsedRes.text() : ~responseBodyContentType.indexOf('json') ? unparsedRes.json() : ~responseBodyContentType.indexOf('form') ? unparsedRes.formData() : o.responseType === 'arrayBuffer' ? // allow user to specify arraybuffer vs blob, don't think you can actually determine difference as it seems like different ways to view same data
+			unparsedRes.arrayBuffer : unparsedRes.blob();
+		}).then(function (body) {
+			return(
+				// update body with parsed body
+				_lodash2.default.merge(res, { body: body }) && !res.ok ? (_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToError).forEach(function (boundFunc) {
+					return boundFunc(res);
+				}), // run bound functions
+				Promise.reject(_lodash2.default.merge(res, { statusText: o.method.toUpperCase() + ' \n ' + fullUrl + ' \n ' + res.status + ' (' + res.statusText + ')' })) // resolve error
+				) : (_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToSuccess).forEach(function (boundFunc) {
+					return boundFunc(res);
+				}), // run bound functions
+				Promise.resolve(res))
+			);
+		}).catch(function (err) {
+			// default to fake normal response on request error so that response handlers can deal with it
+			if (!Object.keys(res).length) {
+				_lodash2.default.merge({
+					url: o.route,
+					status: 501,
+					statusText: o.method.toUpperCase() + ' \n ' + fullUrl + ' \n ' + res.status + ' (' + err.message + ')'
+				}, res);
+				_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToError).forEach(function (boundFunc) {
+					return boundFunc(res);
+				});
+			}
+
+			// send error to the '.catch' where the api library is being used
+			return Promise.reject(err);
+		});
+	};
 
 	return SimpleIsoFetch;
 }();
