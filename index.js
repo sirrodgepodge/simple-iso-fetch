@@ -200,7 +200,7 @@ module.exports = function () {
 			return (// eslint-disable-line no-return-assign
 				_this[method] = function (o) {
 					var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-					return _this.makeRequest(o, _extends({}, reqObjAsSecondArg, { method: method }));
+					return _this.makeRequest(o, _extends({}, reqObjAsSecondArg, { method: method === 'del' ? 'delete' : method }));
 				}
 			);
 		}); // if string is passed just use that as route
@@ -253,7 +253,7 @@ module.exports = function () {
 		o.query = !o.query ? '' : '?' + (0, _querystring.stringify)(o.query);
 
 		var fullUrl = '' + o.route + (0, _isoPathJoin2.default)(o.params, '/') + o.query;
-		var res = { method: o.method === 'del' ? 'DELETE' : o.method.toUpperCase() }; // explicity add method to response, otherwise it's not included
+		var res = { method: o.method.toUpperCase() }; // explicity add method to response, otherwise it's not included
 		var requestConfig = {
 			credentials: !o.includeCreds ? 'include' : 'same-origin',
 			method: o.method,

@@ -167,7 +167,7 @@ module.exports = class SimpleIsoFetch {
     // add methods for request methods
     methods.forEach(method => // eslint-disable-line no-return-assign
       this[method] = (o, reqObjAsSecondArg = {}) =>
-        this.makeRequest(o, {...reqObjAsSecondArg, method})); // if string is passed just use that as route
+        this.makeRequest(o, {...reqObjAsSecondArg, method: method === 'del' ? 'delete' : method})); // if string is passed just use that as route
 	}
 
   // bound functions arrays
@@ -223,7 +223,7 @@ module.exports = class SimpleIsoFetch {
 			`?${queryStringify(o.query)}`;
 
 		const fullUrl = `${o.route}${pathJoin(o.params, '/')}${o.query}`;
-		const res = {method: o.method === 'del' ? 'DELETE' : o.method.toUpperCase()}; // explicity add method to response, otherwise it's not included
+		const res = {method: o.method.toUpperCase()}; // explicity add method to response, otherwise it's not included
 		const requestConfig = {
 			credentials: !o.includeCreds ? 'include' : 'same-origin',
 			method: o.method,
