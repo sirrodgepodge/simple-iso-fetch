@@ -16,7 +16,7 @@ import SimpleIsoFetch from 'simple-iso-fetch';
 // absolute routes are needed server-side until Node.js implements native fetch,
 // you can set the base URL for server-side via the method below (host, port), or with 'process.env.BASE_URL'
 // this "base URL" will be prepended to all requests
-SimpleIsoFetch.setBaseUrl('http://locahost', 3000);
+SimpleIsoFetch.setBaseUrl('http://localhost', 3000);
 
 simpleIsoFetch = new SimpleIsoFetch(); // SimpleIsoFetch must be instantiated before use, this allows for cookie session handling in universal apps, discussed late
 
