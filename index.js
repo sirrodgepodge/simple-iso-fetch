@@ -65,7 +65,7 @@ function listenFactory(arrName) {
 // request methods which shortcuts will be made for
 var methods = ['get', 'put', 'post', 'del', 'patch'];
 
-module.exports = function () {
+var SimpleIsoFetch = function () {
 	_createClass(SimpleIsoFetch, null, [{
 		key: 'setBaseUrl',
 		value: function setBaseUrl(hostUrl, port) {
@@ -115,7 +115,7 @@ module.exports = function () {
 			var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 			var action = arguments[1];
 
-			if (!Object.keys(state).length && ~action.type.indexOf('simpleIsoFetch') && ! ~action.type.indexOf('INIT_BINDINGS')) {
+			if (!Object.keys(state).length && ~action.type.indexOf('simpleIsoFetch') && !~action.type.indexOf('INIT_BINDINGS')) {
 				throw new Error('You need to run syncBindingsWithStore(<simpleIsoFetch instance>,<store>) ' + 'in order to initialize bindings ');
 			}
 
@@ -129,7 +129,14 @@ module.exports = function () {
 
 				case '@@simpleIsoFetch/UNBIND_FUNC':
 					state[action.bindArr] = state[action.bindArr].filter(function (func) {
-						return func !== action.unbindFunc && (func.toString() !== action.unbindFunc.toString() || ~func.toString().indexOf('native code')) && func.name.replace('bound ', '') !== action.unbindFunc.name;
+						return(
+							// check object equivalence
+							func !== action.unbindFunc && (
+							// check stringified function equivalence
+							func.toString() !== action.unbindFunc.toString() || ~func.toString().indexOf('native code')) &&
+							// check function name equivalence
+							func.name.replace('bound ', '') !== action.unbindFunc.name
+						);
 					});
 					return state;
 
@@ -191,6 +198,13 @@ module.exports = function () {
 				unbindFunc: func
 			};
 		}
+	}, {
+		key: 'makeRequest',
+		value: function makeRequest(o) {
+			var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+			return _makeRequest.bind(this)(o, reqObjAsSecondArg);
+		}
 	}]);
 
 	function SimpleIsoFetch(req) {
@@ -215,7 +229,7 @@ module.exports = function () {
 			return (// eslint-disable-line no-return-assign
 				_this[method] = function (o) {
 					var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-					return _this.makeRequest(o, _extends({}, reqObjAsSecondArg, { method: method }));
+					return _this.makeRequest(o, _extends({}, reqObjAsSecondArg, { method: method === 'del' ? 'delete' : method }));
 				}
 			);
 		}); // if string is passed just use that as route
@@ -238,92 +252,120 @@ module.exports = function () {
 
 			var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-			// allow for first argument to be a route string and for options to be passed in as object in second argument
-			o = _extends({}, reqObjAsSecondArg, typeof o === 'string' ? { route: o } : o);
+			return _makeRequest.bind(this)(o, reqObjAsSecondArg).then(function (res) {
+				return !res.ok ? (_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToError).forEach(function (boundFunc) {
+					return boundFunc(res);
+				}), // run bound functions
+				Promise.reject(_lodash2.default.merge(res, { statusText: o.method.toUpperCase() + ' \n ' + fullUrl + ' \n ' + res.status + ' (' + res.statusText + ')' })) // resolve error
+				) : (_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToSuccess).forEach(function (boundFunc) {
+					return boundFunc(res);
+				}), // run bound functions
+				Promise.resolve(res));
+			}).catch(function (res) {
+				// run error res through bound functions
+				_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToError).forEach(function (boundFunc) {
+					return boundFunc(res);
+				});
 
-			// error if no route is provided
-			if (!o.route) return console.error("no 'route' property specified on request");
-
-			// make relative routes absolute, isomorphism needs this until Node.js implements native fetch
-			if (o.route[0] === '/') o.route = '' + baseURL + o.route;
-
-			// provide default values
-			o.params = o.params || [];
-			if (~['get', 'delete'].indexOf(o.method) && o.body) {
-				console.error('request body can not be sent on get or delete requests, body has been set to null');
-				o = _extends({}, o, { body: null });
-			}
-
-			o.headers = _lodash2.default.merge({
-				Accept: '*/*',
-				'Accept-Encoding': 'gzip, deflate, sdch',
-				'Content-Type': !o.body || typeof o.body === 'string' ? // intelligently determine content type
-				'text/plain' : o.body instanceof (isServer ? Buffer : Blob) ? o.body.type : o.body instanceof FormData ? 'multipart/form-data' : 'application/json'
-			}, this.cookiesObj || {}, o.headers || {});
-
-			// convert Node.js Buffers to ArrayBuffers which can be sent in requests
-			if (isServer && o.body instanceof Buffer) {
-				o.body = o.body.buffer.slice(o.body.byteOffset, o.body.byteOffset + o.body.byteLength);
-			}
-
-			// transform query object into query string format
-			o.query = !o.query ? '' : '?' + (0, _querystring.stringify)(o.query);
-
-			var fullUrl = '' + o.route + (0, _isoPathJoin2.default)(o.params, '/') + o.query;
-			var res = { method: o.method.toUpperCase() }; // explicity add method to response, otherwise it's not included
-			var requestConfig = {
-				credentials: !o.includeCreds ? 'include' : 'same-origin',
-				method: o.method,
-				headers: new Headers(o.headers), // 'Headers' is a new native global paired with 'fetch'
-
-				// enables cors requests for absolute paths not beginning with current site's href
-				// note that cookies can't be set with the response on cors requests
-				mode: o.route.slice[0] === '/' || baseURL && o.route.indexOf(baseURL) === 0 ? 'same-origin' : 'cors'
-			};
-
-			// add given body property to requestConfig if not a GET or DELETE request
-			if (o.body) {
-				requestConfig.body = o.headers['Content-Type'] === 'application/json' && typeof o.body !== 'string' ? JSON.stringify(o.body) : // fetch expects stringified body jsons, not objects
-				o.body;
-			}
-
-			// actual api call occurs here
-			return fetch(fullUrl, requestConfig).then(function (unparsedRes) {
-				var responseBodyContentType = unparsedRes.headers.get('Content-Type');
-
-				// first add props other than body to response, then determine how to parse response
-				return _lodash2.default.merge(res, _lodash2.default.omit(unparsedRes, 'body')), !responseBodyContentType || ~responseBodyContentType.indexOf('text') ? unparsedRes.text() : ~responseBodyContentType.indexOf('json') ? unparsedRes.json() : ~responseBodyContentType.indexOf('form') ? unparsedRes.formData() : o.responseType === 'arrayBuffer' ? // allow user to specify arraybuffer vs blob, don't think you can actually determine difference as it seems like different ways to view same data
-				unparsedRes.arrayBuffer : unparsedRes.blob();
-			}).then(function (body) {
-				return(
-					// update body with parsed body
-					_lodash2.default.merge(res, { body: body }) && !res.ok ? (_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToError).forEach(function (boundFunc) {
-						return boundFunc(res);
-					}), // run bound functions
-					Promise.reject(_lodash2.default.merge(res, { statusText: o.method.toUpperCase() + ' \n ' + fullUrl + ' \n ' + res.status + ' (' + res.statusText + ')' })) // resolve error
-					) : (_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToSuccess).forEach(function (boundFunc) {
-						return boundFunc(res);
-					}), // run bound functions
-					Promise.resolve(res))
-				);
-			}).catch(function (err) {
-				// default to fake normal response on request error so that response handlers can deal with it
-				if (!Object.keys(res).length) {
-					_lodash2.default.merge({
-						url: o.route,
-						status: 501,
-						statusText: o.method.toUpperCase() + ' \n ' + fullUrl + ' \n ' + res.status + ' (' + err.message + ')'
-					}, res);
-					_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToError).forEach(function (boundFunc) {
-						return boundFunc(res);
-					});
-				}
-
-				// send error to the '.catch' where the api library is being used
-				return Promise.reject(err);
+				// send error to the '.catch' wherev the api library is being used
+				return Promise.reject(res);
 			});
 		}
 	}]);
 
 	return SimpleIsoFetch;
 }();
+
+;
+
+// add methods for request methods as statics too!
+methods.forEach(function (method) {
+	return (// eslint-disable-line no-return-assign
+		SimpleIsoFetch[method] = function (o) {
+			var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+			return SimpleIsoFetch.makeRequest(o, _extends({}, reqObjAsSecondArg, { method: method === 'del' ? 'delete' : method }));
+		}
+	);
+}); // if string is passed just use that as route
+
+function _makeRequest(o) {
+	var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	// allow for first argument to be a route string and for options to be passed in as object in second argument
+	o = _extends({}, reqObjAsSecondArg, typeof o === 'string' ? { route: o } : o);
+
+	// error if no route is provided
+	if (!o.route) return console.error("no 'route' property specified on request");
+
+	// make relative routes absolute, isomorphism needs this until Node.js implements native fetch
+	if (o.route[0] === '/') o.route = '' + baseURL + o.route;
+
+	// provide default values
+	o.params = o.params || [];
+	if (~['get', 'del'].indexOf(o.method) && o.body) {
+		console.error('request body can not be sent on get or delete requests, body has been set to null');
+		o = _extends({}, o, { body: null });
+	}
+
+	o.headers = _lodash2.default.merge({
+		Accept: '*/*',
+		'Accept-Encoding': 'gzip, deflate, sdch, br',
+		'Content-Type': !o.body || typeof o.body === 'string' ? // intelligently determine content type
+		'text/plain' : o.body instanceof (isServer ? Buffer : Blob) ? o.body.type : o.body instanceof FormData ? 'multipart/form-data' : 'application/json'
+	}, this && this.cookiesObj || {}, o.headers || {});
+
+	// convert Node.js Buffers to ArrayBuffers which can be sent in requests
+	if (isServer && o.body instanceof Buffer) {
+		o.body = o.body.buffer.slice(o.body.byteOffset, o.body.byteOffset + o.body.byteLength);
+	}
+
+	// transform query object into query string format
+	o.query = !o.query ? '' : '?' + (0, _querystring.stringify)(o.query);
+
+	var fullUrl = '' + o.route + (0, _isoPathJoin2.default)(o.params, '/') + o.query;
+	var res = { method: o.method.toUpperCase() }; // explicity add method to response, otherwise it's not included
+	var requestConfig = {
+		credentials: o.credentials || 'same-origin',
+		redirect: o.redirect || 'follow',
+		method: o.method,
+		headers: new Headers(o.headers), // 'Headers' is a new native global paired with 'fetch'
+
+		// enables cors requests for absolute paths not beginning with current site's href
+		// note that cookies can't be set with the response on cors requests
+		mode: o.mode || (o.route.slice[0] === '/' || baseURL && o.route.indexOf(baseURL) === 0 ? 'same-origin' : 'cors')
+	};
+
+	// add given body property to requestConfig if not a GET or DELETE request
+	if (o.body) {
+		requestConfig.body = o.headers['Content-Type'] === 'application/json' && typeof o.body !== 'string' ? JSON.stringify(o.body) : // fetch expects stringified body jsons, not objects
+		o.body;
+	}
+
+	// actual api call occurs here
+	return fetch(fullUrl, requestConfig).then(function (unparsedRes) {
+		var responseBodyContentType = unparsedRes.headers.get('Content-Type');
+
+		// first add props other than body to response, then determine how to parse response
+		return _lodash2.default.merge(res, _lodash2.default.omit(unparsedRes, 'body')), !responseBodyContentType || ~responseBodyContentType.indexOf('text') ? unparsedRes.text() : ~responseBodyContentType.indexOf('json') ? unparsedRes.json() : ~responseBodyContentType.indexOf('form') ? unparsedRes.formData() : o.responseType === 'arrayBuffer' ? // allow user to specify arraybuffer vs blob, don't think you can actually determine difference as it seems like different ways to view same data
+		unparsedRes.arrayBuffer : unparsedRes.blob();
+	}).then(function (body) {
+		return(
+			// update body with parsed body
+			Promise.resolve(_lodash2.default.merge(res, { body: body }))
+		);
+	}).catch(function (err) {
+		// default to fake normal response on request error so that response handlers can deal with it
+		if (!Object.keys(res).length) {
+			_lodash2.default.merge({
+				url: o.route,
+				status: 501,
+				statusText: o.method.toUpperCase() + ' \n ' + fullUrl + ' \n ' + res.status + ' (' + err.message + ')'
+			}, res);
+		}
+
+		return Promise.reject(res);
+	});
+}
+
+// export SimpleIsoFetch class
+module.exports = SimpleIsoFetch;

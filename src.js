@@ -48,7 +48,7 @@ function listenFactory(arrName) {
 const methods = ['get', 'put', 'post', 'del', 'patch'];
 
 
-module.exports = class SimpleIsoFetch {
+class SimpleIsoFetch {
   static setBaseUrl(hostUrl, port) { // allows for setting base url server-side without environmental variable
     baseURL = hostUrl && `${hostUrl}${port && `:${port}` || ''}` || (`http://localhost:${port || process.env.PORT || 3000}`);
     return baseURL;
@@ -102,8 +102,11 @@ module.exports = class SimpleIsoFetch {
 
 			case '@@simpleIsoFetch/UNBIND_FUNC':
 				state[action.bindArr] = state[action.bindArr].filter(func =>
+					// check object equivalence
 					func !== action.unbindFunc &&
+					// check stringified function equivalence
 					(func.toString() !== action.unbindFunc.toString() || ~func.toString().indexOf('native code')) &&
+					// check function name equivalence
 					func.name.replace('bound ', '') !== action.unbindFunc.name);
 				return state;
 
@@ -160,6 +163,10 @@ module.exports = class SimpleIsoFetch {
 		};
 	}
 
+	static makeRequest(o, reqObjAsSecondArg = {}) {
+		return makeRequest.bind(this)(o, reqObjAsSecondArg);
+	}
+
   constructor(req) {
     this.cookiesObj = req && req.get && req.get('cookie') && {cookie: req.get('cookie')};
     this.makeRequest = ::this.makeRequest;
@@ -167,7 +174,7 @@ module.exports = class SimpleIsoFetch {
     // add methods for request methods
     methods.forEach(method => // eslint-disable-line no-return-assign
       this[method] = (o, reqObjAsSecondArg = {}) =>
-        this.makeRequest(o, {...reqObjAsSecondArg, method})); // if string is passed just use that as route
+        this.makeRequest(o, {...reqObjAsSecondArg, method: method === 'del' ? 'delete' : method})); // if string is passed just use that as route
 	}
 
   // bound functions arrays
@@ -183,84 +190,9 @@ module.exports = class SimpleIsoFetch {
   bindToResponse = listenFactory('boundToResponse') // generates function for pushing to 'boundToResponse'
 
 	makeRequest(o, reqObjAsSecondArg = {}) {
-		// allow for first argument to be a route string and for options to be passed in as object in second argument
-		o = {...reqObjAsSecondArg, ...(typeof o === 'string' ? {route: o} : o)};
-
-		// error if no route is provided
-		if (!o.route) return console.error("no 'route' property specified on request");
-
-		// make relative routes absolute, isomorphism needs this until Node.js implements native fetch
-		if (o.route[0] === '/') o.route = `${baseURL}${o.route}`;
-
-		// provide default values
-    o.params = o.params || [];
-		if (~['get', 'delete'].indexOf(o.method) && o.body) {
-			console.error('request body can not be sent on get or delete requests, body has been set to null');
-			o = {...o, body: null};
-		}
-
-		o.headers = _.merge({
-      Accept: '*/*',
-      'Accept-Encoding': 'gzip, deflate, sdch',
-      'Content-Type': !o.body || typeof o.body === 'string' ? // intelligently determine content type
-      'text/plain' :
-        o.body instanceof (isServer ? Buffer : Blob) ?
-        o.body.type :
-        o.body instanceof FormData ?
-        'multipart/form-data' :
-        'application/json',
-      },
-      this.cookiesObj || {},
-      o.headers || {});
-
-    // convert Node.js Buffers to ArrayBuffers which can be sent in requests
-    if (isServer && o.body instanceof Buffer) {
-      o.body = o.body.buffer.slice(o.body.byteOffset, o.body.byteOffset + o.body.byteLength);
-    }
-
-		// transform query object into query string format
-		o.query = !o.query ? '' :
-			`?${queryStringify(o.query)}`;
-
-		const fullUrl = `${o.route}${pathJoin(o.params, '/')}${o.query}`;
-		const res = {method: o.method.toUpperCase()}; // explicity add method to response, otherwise it's not included
-		const requestConfig = {
-			credentials: !o.includeCreds ? 'include' : 'same-origin',
-			method: o.method,
-			headers: new Headers(o.headers), // 'Headers' is a new native global paired with 'fetch'
-
-			// enables cors requests for absolute paths not beginning with current site's href
-			// note that cookies can't be set with the response on cors requests
-			mode: o.route.slice[0]=== '/' || baseURL && o.route.indexOf(baseURL) === 0 ? 'same-origin' : 'cors'
-		};
-
-		// add given body property to requestConfig if not a GET or DELETE request
-		if (o.body) {
-			requestConfig.body = o.headers['Content-Type'] === 'application/json' && typeof o.body !== 'string' ?
-				JSON.stringify(o.body) : // fetch expects stringified body jsons, not objects
-				o.body;
-		}
-
-		// actual api call occurs here
-		return fetch(fullUrl, requestConfig)
-      .then(unparsedRes => {
-				const responseBodyContentType = unparsedRes.headers.get('Content-Type');
-
-				// first add props other than body to response, then determine how to parse response
-				return _.merge(res, _.omit(unparsedRes, 'body')),
-					!responseBodyContentType || ~responseBodyContentType.indexOf('text') ?
-					unparsedRes.text() :
-					~responseBodyContentType.indexOf('json') ?
-					unparsedRes.json() :
-					~responseBodyContentType.indexOf('form') ?
-					unparsedRes.formData() :
-					o.responseType === 'arrayBuffer' ? // allow user to specify arraybuffer vs blob, don't think you can actually determine difference as it seems like different ways to view same data
-					unparsedRes.arrayBuffer :
-					unparsedRes.blob();
-			})
-			.then(body =>
-				// update body with parsed body
-				_.merge(res, {body}) && !res.ok ?
+		return makeRequest.bind(this)(o, reqObjAsSecondArg)
+			.then(res =>
+				!res.ok ?
 					(
 						this.bindingsContainer.boundToResponse.concat(this.bindingsContainer.boundToError).forEach(boundFunc => boundFunc(res)), // run bound functions
 						Promise.reject(_.merge(res, {statusText: `${o.method.toUpperCase()} \n ${fullUrl} \n ${res.status} (${res.statusText})`})) // resolve error
@@ -270,19 +202,117 @@ module.exports = class SimpleIsoFetch {
 						Promise.resolve(res)
 					)
 			)
-			.catch(err => {
-				// default to fake normal response on request error so that response handlers can deal with it
-				if (!Object.keys(res).length) {
-					_.merge({
-						url: o.route,
-						status: 501,
-						statusText: `${o.method.toUpperCase()} \n ${fullUrl} \n ${res.status} (${err.message})`
-					}, res);
-					this.bindingsContainer.boundToResponse.concat(this.bindingsContainer.boundToError).forEach(boundFunc => boundFunc(res));
-				}
+			.catch(res => {
+				// run error res through bound functions
+				this.bindingsContainer.boundToResponse.concat(this.bindingsContainer.boundToError).forEach(boundFunc => boundFunc(res));
 
-				// send error to the '.catch' where the api library is being used
-				return Promise.reject(err);
+				// send error to the '.catch' wherev the api library is being used
+				return Promise.reject(res);
 			});
 	}
 };
+
+
+// add methods for request methods as statics too!
+methods.forEach(method => // eslint-disable-line no-return-assign
+	SimpleIsoFetch[method] = (o, reqObjAsSecondArg = {}) =>
+		SimpleIsoFetch.makeRequest(o, {...reqObjAsSecondArg, method: method === 'del' ? 'delete' : method})); // if string is passed just use that as route
+
+
+function makeRequest(o, reqObjAsSecondArg = {}) {
+	// allow for first argument to be a route string and for options to be passed in as object in second argument
+	o = {...reqObjAsSecondArg, ...(typeof o === 'string' ? {route: o} : o)};
+
+	// error if no route is provided
+	if (!o.route) return console.error("no 'route' property specified on request");
+
+	// make relative routes absolute, isomorphism needs this until Node.js implements native fetch
+	if (o.route[0] === '/') o.route = `${baseURL}${o.route}`;
+
+	// provide default values
+  o.params = o.params || [];
+	if (~['get', 'del'].indexOf(o.method) && o.body) {
+		console.error('request body can not be sent on get or delete requests, body has been set to null');
+		o = {...o, body: null};
+	}
+
+	o.headers = _.merge({
+    Accept: '*/*',
+    'Accept-Encoding': 'gzip, deflate, sdch, br',
+    'Content-Type': !o.body || typeof o.body === 'string' ? // intelligently determine content type
+    'text/plain' :
+      o.body instanceof (isServer ? Buffer : Blob) ?
+      o.body.type :
+      o.body instanceof FormData ?
+      'multipart/form-data' :
+      'application/json',
+    },
+    this && this.cookiesObj || {},
+    o.headers || {});
+
+  // convert Node.js Buffers to ArrayBuffers which can be sent in requests
+  if (isServer && o.body instanceof Buffer) {
+    o.body = o.body.buffer.slice(o.body.byteOffset, o.body.byteOffset + o.body.byteLength);
+  }
+
+	// transform query object into query string format
+	o.query = !o.query ? '' :
+		`?${queryStringify(o.query)}`;
+
+	const fullUrl = `${o.route}${pathJoin(o.params, '/')}${o.query}`;
+	const res = {method: o.method.toUpperCase()}; // explicity add method to response, otherwise it's not included
+	const requestConfig = {
+		credentials: o.credentials || 'same-origin',
+		redirect: o.redirect || 'follow',
+		method: o.method,
+		headers: new Headers(o.headers), // 'Headers' is a new native global paired with 'fetch'
+
+		// enables cors requests for absolute paths not beginning with current site's href
+		// note that cookies can't be set with the response on cors requests
+		mode: o.mode || (o.route.slice[0] === '/' || baseURL && o.route.indexOf(baseURL) === 0 ? 'same-origin' : 'cors')
+	};
+
+	// add given body property to requestConfig if not a GET or DELETE request
+	if (o.body) {
+		requestConfig.body = o.headers['Content-Type'] === 'application/json' && typeof o.body !== 'string' ?
+			JSON.stringify(o.body) : // fetch expects stringified body jsons, not objects
+			o.body;
+	}
+
+	// actual api call occurs here
+	return fetch(fullUrl, requestConfig)
+    .then(unparsedRes => {
+			const responseBodyContentType = unparsedRes.headers.get('Content-Type');
+
+			// first add props other than body to response, then determine how to parse response
+			return _.merge(res, _.omit(unparsedRes, 'body')),
+				!responseBodyContentType || ~responseBodyContentType.indexOf('text') ?
+				unparsedRes.text() :
+				~responseBodyContentType.indexOf('json') ?
+				unparsedRes.json() :
+				~responseBodyContentType.indexOf('form') ?
+				unparsedRes.formData() :
+				o.responseType === 'arrayBuffer' ? // allow user to specify arraybuffer vs blob, don't think you can actually determine difference as it seems like different ways to view same data
+				unparsedRes.arrayBuffer :
+				unparsedRes.blob();
+		})
+		.then(body =>
+			// update body with parsed body
+			Promise.resolve(_.merge(res, {body}))
+		)
+		.catch(err => {
+			// default to fake normal response on request error so that response handlers can deal with it
+			if (!Object.keys(res).length) {
+				_.merge({
+					url: o.route,
+					status: 501,
+					statusText: `${o.method.toUpperCase()} \n ${fullUrl} \n ${res.status} (${err.message})`
+				}, res);
+			}
+
+			return Promise.reject(res);
+		})
+}
+
+// export SimpleIsoFetch class
+module.exports = SimpleIsoFetch;

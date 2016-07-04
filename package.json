@@ -1,6 +1,6 @@
 {
   "name": "simple-iso-fetch",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "Isomorphic fetch with response parsing taken care of for you (based on headers) and response binding built in",
   "main": "index.js",
   "keywords": [
