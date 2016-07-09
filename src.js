@@ -259,7 +259,7 @@ function makeRequest(o, reqObjAsSecondArg = {}) {
 	o.query = !o.query ? '' :
 		`?${queryStringify(o.query)}`;
 
-	const fullUrl = `${o.route}${pathJoin(o.params, '/')}${o.query}`;
+	const fullUrl = pathJoin(o.route, o.params, o.query);
 	const res = {method: o.method.toUpperCase()}; // explicity add method to response, otherwise it's not included
 	const requestConfig = {
 		credentials: o.credentials || 'same-origin',

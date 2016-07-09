@@ -322,7 +322,7 @@ function _makeRequest(o) {
 	// transform query object into query string format
 	o.query = !o.query ? '' : '?' + (0, _querystring.stringify)(o.query);
 
-	var fullUrl = '' + o.route + (0, _isoPathJoin2.default)(o.params, '/') + o.query;
+	var fullUrl = (0, _isoPathJoin2.default)(o.route, o.params, o.query);
 	var res = { method: o.method.toUpperCase() }; // explicity add method to response, otherwise it's not included
 	var requestConfig = {
 		credentials: o.credentials || 'same-origin',
