@@ -8,17 +8,15 @@ I have also added the ability to bind functions to be run when API responses are
 [![NPM][nodei-image]][nodei-url]
 
 # Making Requests
-To make requests you just need to need to make an instance of SimpleIsoFetch and then can use your standard 'get', 'put', 'post', 'del', and 'patch' methods.  If you're server-side you need to set the host because node-fetch can't determine the base route
+To make requests you can use the standard 'get', 'put', 'post', 'del', and 'patch' methods.  If you're server-side you need to set the host because node-fetch can't determine the base route
 ## 'Hello World' Example
 ```js
-import SimpleIsoFetch from 'simple-iso-fetch';
+import simpleIsoFetch from 'simple-iso-fetch';
 
 // absolute routes are needed server-side until Node.js implements native fetch,
 // you can set the base URL for server-side via the method below (host, port), or with 'process.env.BASE_URL'
 // this "base URL" will be prepended to all requests
-SimpleIsoFetch.setBaseUrl('http://localhost', 3000);
-
-simpleIsoFetch = new SimpleIsoFetch(); // SimpleIsoFetch must be instantiated before use, this allows for cookie session handling in universal apps, discussed late
+simpleIsoFetch.setBaseUrl('http://localhost', 3000);
 
 // example usage for get request to 'http://locahost:3000'
 simpleIsoFetch.get({
@@ -36,7 +34,7 @@ simpleIsoFetch.get('/').then(res => {
 ## A More Thorough Example
 ```js
 // set to your app's hostname + port, (if hostname not provided, defaults to localhost, if hostname provided without port, 80 is assumed, if neither hostname nor port provided, http://localhost: + (process.env.PORT || 3000) used, function returns resulting base URL (note this is a static method, on class itself not instance)
-SimpleIsoFetch.setBaseUrl('http://localhost', 3000);
+simpleIsoFetch.setBaseUrl('http://localhost', 3000);
 
 // normal usage
 const aJsonObject = {
@@ -140,13 +138,10 @@ simpleIsoFetch.makeRequest({
 
 ## Binding/Unbinding Functions to Responses
 ```js
-import SimpleIsoFetch from 'simple-iso-fetch';
+import simpleIsoFetch from 'simple-iso-fetch';
 
 // set host to your app's hostname for server-side fetching
-SimpleIsoFetch.setBaseUrl('http://localhost:3000');
-
-// make instance
-const simpleIsoFetch = new SimpleIsoFetch();
+simpleIsoFetch.setBaseUrl('http://localhost:3000');
 
 // bind function to error response, returns function to stop binding this function (useful for React's ComponentWillUnmount)
 const unbindThisErrorFunction = simpleIsoFetch.bindToError(res => {
@@ -185,9 +180,9 @@ console.log(wasBound);
 
 
 // you can reference the arrays of bound functions with the below properties, note that if you modify these arrays directly and affect order or overwrite functions, your unbind functions will no longer work
-simpleFetch.boundToError: [], // array of functions to be called upon error
-simpleFetch.boundToSuccess: [], // array of functions to be called upon success responses
-simpleFetch.boundToResponse: [], // array of functions to be called upon all responses
+simpleIsoFetch.boundToError: [], // array of functions to be called upon error
+simpleIsoFetch.boundToSuccess: [], // array of functions to be called upon success responses
+simpleIsoFetch.boundToResponse: [], // array of functions to be called upon all responses
 ```
 
 # Isomorphic (Universal) Redux use
@@ -197,16 +192,18 @@ I provided a solution for this with using redux middleware and also provided a w
 
 Note that if you are not using redux or not making a universal app that has authentication, you can still use everything above this point and have a nifty fetching tool, but if you do need to handle the isomorphic redux thing, you're covered below :).
 
+The key point is that you can use simpleIsoFetch as a class and make an instance of it where you pass in an express "request" object, this will bind the cookie contained in that request to all uses of that instance.  This instance can then be passed throughout your application to your redux action creators.
+
 ```js
 // on your root universal route
 app.get('/*', (req, res, next) => {
-    const simpleIsoFetch = new SimpleIsoFetch(req);
+    const simpleIsoFetch = new SimpleIsoFetch(req); // make an instance of 
     const store = configureStore(..., simpleIsoFetch, ...);
     ...
 });
 ```
 ### Use with redux-thunk
-Since redux-thunk is very common for handling async requests with redux I have included middleware for this pattern, you can of course feel free to make your ownand just pass your 'simpleIsoFetchInstance' into that.
+Since redux-thunk is very common for handling async requests with redux I have included middleware for this pattern, you can of course feel free to make your own sand just pass your 'simpleIsoFetchInstance' into that.
 ```js
 // in 'configureStore' file/function
 import thunk from 'redux-thunk';
