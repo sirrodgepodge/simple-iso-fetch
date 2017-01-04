@@ -190,12 +190,12 @@ class SimpleIsoFetch {
   bindToResponse = listenFactory('boundToResponse') // generates function for pushing to 'boundToResponse'
 
 	makeRequest(o, reqObjAsSecondArg = {}) {
-		return makeRequest.bind(this)(o, reqObjAsSecondArg)
+		return this::makeRequest(o, reqObjAsSecondArg)
 			.then(res =>
 				!res.ok ?
 					(
 						this.bindingsContainer.boundToResponse.concat(this.bindingsContainer.boundToError).forEach(boundFunc => boundFunc(res)), // run bound functions
-						Promise.reject(_.merge(res, {statusText: `${o.method.toUpperCase()} \n ${fullUrl} \n ${res.status} (${res.statusText})`})) // resolve error
+						Promise.reject(_.merge(res, {statusText: `${(o.method || '').toUpperCase()} \n ${o.route} \n ${res.status} (${res.statusText})`})) // resolve error
 					) :
 					(
 						this.bindingsContainer.boundToResponse.concat(this.bindingsContainer.boundToSuccess).forEach(boundFunc => boundFunc(res)), // run bound functions
@@ -259,8 +259,9 @@ function makeRequest(o, reqObjAsSecondArg = {}) {
 	o.query = !o.query ? '' :
 		`?${queryStringify(o.query)}`;
 
+	const methodResMessage = (o.method || '').toUpperCase();
 	const fullUrl = pathJoin(o.route, o.params, o.query);
-	const res = {method: o.method.toUpperCase()}; // explicity add method to response, otherwise it's not included
+	const res = {method: methodResMessage}; // explicity add method to response, otherwise it's not included
 	const requestConfig = {
 		credentials: o.credentials || 'same-origin',
 		redirect: o.redirect || 'follow',
@@ -306,7 +307,7 @@ function makeRequest(o, reqObjAsSecondArg = {}) {
 				_.merge({
 					url: o.route,
 					status: 501,
-					statusText: `${o.method.toUpperCase()} \n ${fullUrl} \n ${res.status} (${err.message})`
+					statusText: `${methodWithDefault} \n ${o.route} \n ${res.status} (${err.message})`
 				}, res);
 			}
 

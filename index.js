@@ -94,10 +94,9 @@ var SimpleIsoFetch = function () {
 	}, {
 		key: 'syncBindingsWithStore',
 		value: function syncBindingsWithStore(simpleIsoFetchInstance, store) {
-			var _ref = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
-
-			var _ref$stateProperty = _ref.stateProperty;
-			var stateProperty = _ref$stateProperty === undefined ? 'simpleIsoFetch' : _ref$stateProperty;
+			var _ref = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
+			    _ref$stateProperty = _ref.stateProperty,
+			    stateProperty = _ref$stateProperty === undefined ? 'simpleIsoFetch' : _ref$stateProperty;
 
 			// Ensure that the reducer is mounted on the store and functioning properly.
 			if (!store.getState()[stateProperty]) {
@@ -112,7 +111,7 @@ var SimpleIsoFetch = function () {
 	}, {
 		key: 'bindingsReducer',
 		value: function bindingsReducer() {
-			var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+			var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 			var action = arguments[1];
 
 			if (!Object.keys(state).length && ~action.type.indexOf('simpleIsoFetch') && !~action.type.indexOf('INIT_BINDINGS')) {
@@ -129,7 +128,7 @@ var SimpleIsoFetch = function () {
 
 				case '@@simpleIsoFetch/UNBIND_FUNC':
 					state[action.bindArr] = state[action.bindArr].filter(function (func) {
-						return(
+						return (
 							// check object equivalence
 							func !== action.unbindFunc && (
 							// check stringified function equivalence
@@ -201,7 +200,7 @@ var SimpleIsoFetch = function () {
 	}, {
 		key: 'makeRequest',
 		value: function makeRequest(o) {
-			var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+			var reqObjAsSecondArg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 			return _makeRequest.bind(this)(o, reqObjAsSecondArg);
 		}
@@ -228,7 +227,7 @@ var SimpleIsoFetch = function () {
 		methods.forEach(function (method) {
 			return (// eslint-disable-line no-return-assign
 				_this[method] = function (o) {
-					var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+					var reqObjAsSecondArg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 					return _this.makeRequest(o, _extends({}, reqObjAsSecondArg, { method: method === 'del' ? 'delete' : method }));
 				}
 			);
@@ -250,13 +249,13 @@ var SimpleIsoFetch = function () {
 		value: function makeRequest(o) {
 			var _this2 = this;
 
-			var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+			var reqObjAsSecondArg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-			return _makeRequest.bind(this)(o, reqObjAsSecondArg).then(function (res) {
+			return _makeRequest.call(this, o, reqObjAsSecondArg).then(function (res) {
 				return !res.ok ? (_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToError).forEach(function (boundFunc) {
 					return boundFunc(res);
 				}), // run bound functions
-				Promise.reject(_lodash2.default.merge(res, { statusText: o.method.toUpperCase() + ' \n ' + fullUrl + ' \n ' + res.status + ' (' + res.statusText + ')' })) // resolve error
+				Promise.reject(_lodash2.default.merge(res, { statusText: (o.method || '').toUpperCase() + ' \n ' + o.route + ' \n ' + res.status + ' (' + res.statusText + ')' })) // resolve error
 				) : (_this2.bindingsContainer.boundToResponse.concat(_this2.bindingsContainer.boundToSuccess).forEach(function (boundFunc) {
 					return boundFunc(res);
 				}), // run bound functions
@@ -282,14 +281,15 @@ var SimpleIsoFetch = function () {
 methods.forEach(function (method) {
 	return (// eslint-disable-line no-return-assign
 		SimpleIsoFetch[method] = function (o) {
-			var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+			var reqObjAsSecondArg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 			return SimpleIsoFetch.makeRequest(o, _extends({}, reqObjAsSecondArg, { method: method === 'del' ? 'delete' : method }));
 		}
 	);
 }); // if string is passed just use that as route
 
+
 function _makeRequest(o) {
-	var reqObjAsSecondArg = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+	var reqObjAsSecondArg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 	// allow for first argument to be a route string and for options to be passed in as object in second argument
 	o = _extends({}, reqObjAsSecondArg, typeof o === 'string' ? { route: o } : o);
@@ -322,8 +322,9 @@ function _makeRequest(o) {
 	// transform query object into query string format
 	o.query = !o.query ? '' : '?' + (0, _querystring.stringify)(o.query);
 
+	var methodResMessage = (o.method || '').toUpperCase();
 	var fullUrl = (0, _isoPathJoin2.default)(o.route, o.params, o.query);
-	var res = { method: o.method.toUpperCase() }; // explicity add method to response, otherwise it's not included
+	var res = { method: methodResMessage }; // explicity add method to response, otherwise it's not included
 	var requestConfig = {
 		credentials: o.credentials || 'same-origin',
 		redirect: o.redirect || 'follow',
@@ -349,7 +350,7 @@ function _makeRequest(o) {
 		return _lodash2.default.merge(res, _lodash2.default.omit(unparsedRes, 'body')), !responseBodyContentType || ~responseBodyContentType.indexOf('text') ? unparsedRes.text() : ~responseBodyContentType.indexOf('json') ? unparsedRes.json() : ~responseBodyContentType.indexOf('form') ? unparsedRes.formData() : o.responseType === 'arrayBuffer' ? // allow user to specify arraybuffer vs blob, don't think you can actually determine difference as it seems like different ways to view same data
 		unparsedRes.arrayBuffer : unparsedRes.blob();
 	}).then(function (body) {
-		return(
+		return (
 			// update body with parsed body
 			Promise.resolve(_lodash2.default.merge(res, { body: body }))
 		);
@@ -359,7 +360,7 @@ function _makeRequest(o) {
 			_lodash2.default.merge({
 				url: o.route,
 				status: 501,
-				statusText: o.method.toUpperCase() + ' \n ' + fullUrl + ' \n ' + res.status + ' (' + err.message + ')'
+				statusText: methodWithDefault + ' \n ' + o.route + ' \n ' + res.status + ' (' + err.message + ')'
 			}, res);
 		}
 
